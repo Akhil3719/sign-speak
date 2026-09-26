@@ -1,0 +1,1400 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=fea411d3-f324-4e8d-9774-a8e9e8ae8f0a
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignSpeak — Real-Time Sign Language Translator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef4fc; --surface:#ffffff; --border:#dae4f2;
+  --ink:#0a1628; --muted:#5b6b82;
+  --blue:#2f6fed; --blue-deep:#1d4fc4; --pill-bg:#e3edfd;
+  --navy:#0a1628; --navy-2:#101f38;
+  --red:#e5484d; --red-bg:#fdeceb; --good:#1f9d55;
+  --radius:14px;
+  --font-script:'Caveat',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5;}
+h1,h2,h3{font-weight:800;letter-spacing:-.01em;}
+button{font-family:inherit;cursor:pointer;border:none;}
+.hidden{display:none !important;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:40;background:rgba(238,244,252,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+.topbar-inner{display:flex;align-items:center;gap:8px;padding:14px 22px;max-width:1080px;margin:0 auto;}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;}
+.logo-mark{width:34px;height:34px;flex-shrink:0;color:var(--blue);}
+.logo b{color:var(--ink);}
+.logo span{color:var(--blue);}
+nav{display:flex;gap:4px;margin-left:auto;}
+.nav-item{padding:9px 14px;border-radius:999px;font-size:13.5px;font-weight:700;color:var(--muted);background:transparent;transition:background .15s ease,color .15s ease;}
+.nav-item:hover{color:var(--ink);}
+.nav-item.active{background:var(--blue);color:#fff;}
+
+main{padding:36px 0 0;}
+.page{display:flex;flex-direction:column;gap:28px;}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:800;}
+.script-note{font-family:var(--font-script);font-size:22px;color:var(--blue-deep);line-height:1.25;}
+
+/* buttons */
+button.primary{background:var(--blue);color:#fff;font-weight:700;font-size:13.5px;padding:12px 22px;border-radius:10px;transition:background .15s ease,transform .15s ease;}
+button.primary:hover{background:var(--blue-deep);transform:translateY(-1px);}
+button.primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+button.secondary{background:var(--surface);color:var(--ink);font-weight:700;font-size:13px;padding:11px 18px;border-radius:10px;border:1.5px solid var(--border);transition:border-color .15s ease;}
+button.secondary:hover{border-color:var(--blue);}
+button.danger{background:var(--red-bg);color:#b52327;font-weight:700;font-size:12.5px;padding:9px 15px;border-radius:9px;border:1px solid #f6c5c6;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+
+/* ===== HOME ===== */
+.hero{padding:44px 36px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{
+  content:"";position:absolute;inset:-40%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(480px 320px at 20% 20%, rgba(59,130,246,.14), transparent 60%),
+    radial-gradient(420px 300px at 85% 15%, rgba(34,211,238,.12), transparent 60%),
+    radial-gradient(500px 340px at 50% 100%, rgba(59,130,246,.08), transparent 60%);
+  animation:ambientDrift 14s ease-in-out infinite alternate;
+}
+@keyframes ambientDrift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(2%,-2%) scale(1.06);}}
+.hero > *{position:relative;z-index:1;}
+.hero h1{font-size:clamp(26px,4vw,38px);margin:12px 0 12px;max-width:640px;margin-left:auto;margin-right:auto;}
+.hero p{color:var(--muted);font-size:14.5px;max-width:520px;margin:0 auto 18px;}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.hero .script-note{position:absolute;top:18px;right:26px;text-align:right;opacity:.85;transform:rotate(-3deg);}
+@media (max-width:640px){.hero .script-note{display:none;}}
+
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+.feature-card{padding:22px;}
+.feature-card .badge-num{width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;margin-bottom:12px;}
+.feature-card h3{font-size:14.5px;margin-bottom:6px;}
+.feature-card p{font-size:12.5px;color:var(--muted);line-height:1.6;}
+.steps-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.step-chip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:9px 14px;border-radius:999px;}
+.step-chip b{color:var(--blue);}
+
+.no-llm-callout{display:flex;align-items:center;gap:16px;padding:18px 22px;}
+.no-llm-callout .ring{width:46px;height:46px;border-radius:50%;border:3px solid var(--red);position:relative;flex-shrink:0;}
+.no-llm-callout .ring::after{content:"";position:absolute;left:6px;right:6px;top:50%;height:3px;background:var(--red);transform:translateY(-50%) rotate(-45deg);}
+.no-llm-callout p{font-size:12.5px;color:var(--muted);line-height:1.6;}
+.no-llm-callout b{color:var(--ink);font-size:13.5px;}
+
+.section-head{text-align:center;margin-bottom:14px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
+.stat-card{padding:20px;text-align:center;}
+.stat-card b{display:block;font-size:22px;color:var(--blue);margin-bottom:8px;font-family:'JetBrains Mono',monospace;}
+.stat-card p{font-size:12px;color:var(--muted);line-height:1.55;}
+
+.panel-card{padding:24px;}
+.panel-card h3{font-size:15px;margin-bottom:14px;}
+.bullet-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.bullet-list li{font-size:13px;color:var(--muted);line-height:1.6;padding-left:20px;position:relative;}
+.bullet-list li::before{content:"";position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:2px;background:var(--blue);}
+
+.punchy-line{text-align:center;font-size:clamp(17px,2.6vw,22px);font-weight:800;color:var(--ink);padding:8px 10px;line-height:1.5;}
+
+.who-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;}
+.who-grid b{display:block;font-size:13.5px;margin-bottom:6px;color:var(--ink);}
+.who-grid p{font-size:12px;color:var(--muted);line-height:1.55;}
+
+.standout-strip{padding:26px;background:var(--navy);color:#fff;}
+.standout-strip h3{font-size:15px;color:#fff;margin-bottom:10px;}
+.standout-strip p{font-size:13px;color:#c3d2ef;line-height:1.7;}
+
+/* ===== PRACTICE ===== */
+.practice-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start;}
+@media (max-width:860px){.practice-layout{grid-template-columns:1fr;}}
+.video-panel{padding:18px;}
+.video-stage{position:relative;width:100%;aspect-ratio:4/3;background:var(--navy);border-radius:12px;overflow:hidden;}
+.video-stage video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+.video-stage canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);}
+.cam-status{position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:6px;}
+.cam-status .dot{width:7px;height:7px;border-radius:50%;background:var(--good);}
+
+.recognized-banner{margin-top:14px;padding:16px 18px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;}
+.recognized-banner .wave-ico{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.recognized-banner .text{flex:1;text-align:left;}
+.recognized-banner .eyebrow-white{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#9db4e0;font-weight:700;}
+.recognized-banner .label{font-size:22px;font-weight:800;min-height:28px;color:#fff;}
+.recognized-banner .sub{font-size:11.5px;color:#9db4e0;margin-top:2px;}
+
+.hud-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.hud-chip{flex:1;min-width:110px;background:var(--navy-2);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:10px 12px;text-align:center;}
+.hud-label{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#7d94bf;font-weight:700;margin-bottom:4px;}
+.hud-value{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:#22d3ee;text-shadow:0 0 10px rgba(34,211,238,.5);}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,211,238,.4);}50%{box-shadow:0 0 0 6px rgba(34,211,238,0);}}
+.record-btn.recording{animation:glowPulse 1.1s ease-out infinite;}
+
+.mode-tabs{display:flex;gap:8px;margin-bottom:6px;}
+.mode-tab{flex:1;background:var(--bg);border:1.5px solid var(--border-soft,var(--border));color:var(--muted);font-weight:700;font-size:12px;padding:10px 8px;border-radius:9px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:border-color .15s ease,background .15s ease,color .15s ease;}
+.mode-tab .mode-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--good);}
+.mode-tab.active{border-color:var(--blue);background:var(--pill-bg);color:var(--ink);}
+.mode-tab.active .mode-tag{color:var(--blue-deep);}
+
+.gesture-chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+.gesture-chip{background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;color:var(--ink);}
+
+.listen-panel{padding:30px 26px;text-align:center;}
+.listen-live-text{min-height:120px;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,3.2vw,26px);font-weight:700;line-height:1.5;color:var(--ink);background:var(--bg);border-radius:14px;padding:24px;}
+
+.my-signs-list{display:flex;flex-direction:column;gap:8px;}
+.my-signs-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--bg);border-radius:10px;}
+.my-signs-row .word{font-weight:700;font-size:13.5px;flex:1;}
+.my-signs-row .count{font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.my-signs-row button{font-size:11px;color:#b52327;background:var(--red-bg);border:1px solid #f6c5c6;padding:6px 11px;border-radius:7px;font-weight:700;}
+
+.control-card{padding:20px;display:flex;flex-direction:column;gap:16px;}
+.control-card h3{font-size:14px;}
+.sign-picker{display:flex;flex-wrap:wrap;gap:8px;}
+.sign-btn{background:var(--bg);border:1.5px solid var(--border);color:var(--ink);font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:9px;transition:border-color .15s ease,background .15s ease;}
+.sign-btn .count{color:var(--muted);font-weight:500;margin-left:5px;}
+.sign-btn.selected{border-color:var(--blue);background:var(--pill-bg);}
+.record-btn{background:var(--blue);color:#fff;font-weight:800;font-size:14px;padding:16px;border-radius:12px;text-align:center;user-select:none;transition:background .1s ease,transform .1s ease;}
+.record-btn:active{background:var(--blue-deep);transform:scale(.98);}
+.record-btn.recording{background:var(--blue-deep);}
+.control-row{display:flex;gap:10px;flex-wrap:wrap;}
+.dataset-note{font-size:11.5px;color:var(--muted);line-height:1.6;}
+.transcript{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.transcript .row{font-size:12.5px;padding:8px 10px;background:var(--bg);border-radius:8px;}
+.transcript .row time{color:var(--muted);font-size:10.5px;margin-right:8px;}
+
+/* ===== CALL ===== */
+.call-setup{padding:26px;text-align:center;max-width:520px;margin:0 auto;}
+.call-setup h2{font-size:19px;margin-bottom:10px;}
+.call-setup p{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.call-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:18px;}
+.call-tab{padding:9px 18px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--border);color:var(--muted);}
+.call-tab.active{background:var(--blue);color:#fff;border-color:transparent;}
+.share-box{display:flex;gap:8px;margin-top:16px;}
+.share-box input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12.5px;color:var(--ink);}
+.join-row{display:flex;gap:8px;margin-top:6px;}
+.join-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:13px;}
+.status-line{font-size:12px;color:var(--muted);margin-top:14px;min-height:16px;}
+
+.call-active{display:none;flex-direction:column;gap:16px;}
+.call-active.live{display:flex;}
+.video-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (max-width:700px){.video-grid{grid-template-columns:1fr;}}
+.call-video-box{position:relative;background:var(--navy);border-radius:12px;overflow:hidden;aspect-ratio:4/3;}
+.tap-to-enable-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;white-space:nowrap;}
+.call-video-box video{width:100%;height:100%;object-fit:cover;}
+.call-video-box.local video{transform:scaleX(-1);}
+.call-video-box .tag{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;padding:4px 10px;border-radius:999px;}
+.caption-overlay{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(10,22,40,.72);color:#fff;font-size:14px;font-weight:700;padding:10px 12px;border-radius:9px;text-align:center;min-height:20px;}
+.call-controls{display:flex;justify-content:center;gap:10px;}
+
+/* ===== TECH STACK STRIP + SKYLINE FOOTER ===== */
+.tech-strip{background:var(--surface);border-top:1px solid var(--border);padding:22px 0;margin-top:12px;}
+.tech-strip-inner{max-width:1080px;margin:0 auto;padding:0 22px;}
+.tech-strip .label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:14px;text-align:center;}
+
+.page-title{text-align:center;max-width:640px;margin:0 auto 26px;}
+.page-num{color:var(--blue);}
+.big-title{font-size:clamp(24px,3.6vw,32px);margin:10px 0 10px;}
+.page-sub{color:var(--muted);font-size:13.5px;line-height:1.6;}
+
+.tech-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:26px;}
+.tech-card{padding:22px;display:flex;flex-direction:column;gap:10px;}
+.tech-card-num{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.tech-card h3{font-size:14px;line-height:1.35;}
+.tech-card h3 span{color:var(--muted);font-weight:600;font-size:12px;}
+.tech-card-sub{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;}
+.tech-card .bullet-list li{font-size:11.5px;}
+.tech-tag{margin-top:auto;font-size:11px;font-weight:700;color:var(--blue-deep);background:var(--pill-bg);padding:8px 10px;border-radius:8px;text-align:center;}
+.tech-row{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;}
+.tech-item{display:flex;flex-direction:column;align-items:center;gap:8px;width:96px;}
+.tech-item .circle{width:44px;height:44px;border-radius:50%;background:var(--pill-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;}
+.tech-item span{font-size:11px;font-weight:700;text-align:center;color:var(--ink);line-height:1.3;}
+
+.site-footer{background:var(--navy);color:#cdd9ef;position:relative;overflow:hidden;padding:34px 0 22px;margin-top:0;}
+.site-footer .skyline{position:absolute;left:0;right:0;bottom:0;width:100%;height:70px;opacity:.5;}
+.site-footer-inner{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;}
+.site-footer .track{font-size:12px;}
+.site-footer .track b{color:#fff;}
+.site-footer .tagline{font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:right;line-height:1.8;color:#9db4e0;}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:11px;font-size:12.5px;font-weight:600;box-shadow:0 14px 34px -10px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;z-index:200;max-width:320px;text-align:center;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">
+      <svg class="logo-mark" viewBox="0 0 40 40" fill="none">
+        <path d="M20 6c2.5 0 5 1.2 6.7 3.1M20 2c3.6 0 7 1.7 9.4 4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M13 20v-6.5a2 2 0 0 1 4 0V19m0-4.5v-2a2 2 0 0 1 4 0v2m0 .5v-1.5a2 2 0 0 1 4 0V20m0-1v3a7 7 0 0 1-7 7h-1.5a7 7 0 0 1-5.6-2.8L9 23.5a1.8 1.8 0 0 1 2.6-2.4l1.4 1.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <b>Sign</b><span>Speak</span>
+    </div>
+    <nav>
+      <button class="nav-item active" data-page="home">Home</button>
+      <button class="nav-item" data-page="practice">Practice &amp; Recognize</button>
+      <button class="nav-item" data-page="mysigns">My Signs</button>
+      <button class="nav-item" data-page="listen">Speech &amp; Text</button>
+      <button class="nav-item" data-page="call">SignSpeak Connect</button>
+      <button class="nav-item" data-page="tech">Tech</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ============ HOME ============ -->
+  <section class="page" data-page="home">
+    <div class="wrap">
+      <div class="card hero">
+        <span class="script-note">Simple AI.<br>Real People.<br>Real Impact.</span>
+        <span class="eyebrow">Real-time · runs in your browser · no install</span>
+        <h1>Sign a word. SignSpeak says it out loud — in person or on a call.</h1>
+        <p>Train it on a handful of signs, then watch it recognize them live through your webcam and speak them aloud. Works face-to-face, and in a built-in two-way video call with live captions.</p>
+        <div class="hero-actions">
+          <button class="primary" data-goto="practice">Train &amp; Try It →</button>
+          <button class="secondary" data-goto="call">SignSpeak Connect</button>
+        </div>
+      </div>
+
+      <!-- The Problem -->
+      <div>
+        <div class="section-head"><span class="eyebrow">The problem</span></div>
+        <div class="stat-grid">
+          <div class="card stat-card"><b>430M+</b><p>people worldwide live with disabling hearing loss (WHO)</p></div>
+          <div class="card stat-card"><b>Most</b><p>hearing people never learn sign language</p></div>
+          <div class="card stat-card"><b>Limited</b><p>human interpreters can't scale to everyday moments</p></div>
+          <div class="card stat-card"><b>Remote too</b><p>this barrier doesn't disappear on phone or video calls — a deaf person often can't communicate remotely without a third-party interpreter</p></div>
+        </div>
+      </div>
+
+      <!-- Why the gap exists -->
+      <div class="card panel-card">
+        <h3>Why this gap still exists</h3>
+        <ul class="bullet-list">
+          <li>Human interpreters can't scale to every daily interaction</li>
+          <li>Learning sign language takes years — not realistic to ask of every shopkeeper, doctor, or stranger</li>
+          <li>Most sign-recognition research stays in academic papers or needs expensive hardware (gloves, depth sensors)</li>
+          <li>No simple tool exists that works both face-to-face and remotely, using devices people already own</li>
+        </ul>
+      </div>
+
+      <div class="punchy-line">No special gloves. No expensive sensors.<br>Just a camera and a browser.</div>
+
+      <!-- How it works -->
+      <div>
+        <div class="section-head"><span class="eyebrow">How it works</span></div>
+        <div class="feature-grid">
+          <div class="card feature-card">
+            <div class="badge-num">1</div>
+            <h3>Teach it a sign</h3>
+            <p>Pick a word, hold the sign in front of your camera, and capture a few samples. Takes seconds per word.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="badge-num">2</div>
+            <h3>It recognizes &amp; speaks</h3>
+            <p>Sign it again — SignSpeak matches it against what you taught it and speaks the word out loud instantly.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="badge-num">3</div>
+            <h3>Take it to a call</h3>
+            <p>Start a video call and share the link over WhatsApp or SMS — signs become speech, and speech becomes live captions, both ways.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Who this helps -->
+      <div class="card panel-card">
+        <h3>Who this helps</h3>
+        <div class="who-grid">
+          <div><b>Deaf &amp; hard-of-hearing individuals</b><p>spontaneous conversations with hearing people who don't know sign language</p></div>
+          <div><b>Hearing people</b><p>no sign language knowledge needed to understand someone signing to them</p></div>
+          <div><b>Institutions</b><p>hospitals, schools, government service counters — where quick, accurate communication genuinely matters</p></div>
+        </div>
+      </div>
+
+      <div class="card no-llm-callout">
+        <div class="ring"></div>
+        <p><b>No LLMs. No GPT. No Claude.</b><br>This is a computer vision + classic ML pipeline, not an LLM-based app. No text generation, no chatbot, no external AI APIs.</p>
+      </div>
+
+      <!-- Impact & future scope -->
+      <div class="card panel-card">
+        <h3>Impact &amp; future scope</h3>
+        <ul class="bullet-list">
+          <li>Expandable vocabulary — the same pipeline scales to hundreds of signs with more training data</li>
+          <li>Multi-language speech output for regional accessibility</li>
+          <li>Full two-way calling already part of the core vision, not a future add-on</li>
+          <li>Real deployment potential in hospitals, government offices, and schools as a low-cost accessibility tool</li>
+        </ul>
+      </div>
+
+      <!-- Why this stands out -->
+      <div class="card standout-strip">
+        <h3>Why this stands out</h3>
+        <p>Unlike many hackathon accessibility projects that stay theoretical, SignSpeak is fully interactive and immediately demoable — judges can watch a sign happen and hear it spoken back in real time, live on stage. It combines genuine social impact with a technically credible AI pipeline and a realistic remote-communication feature, built entirely on free, open tools.</p>
+      </div>
+
+      <div class="steps-row">
+        <div class="step-chip"><b>Track:</b>&nbsp;AI &amp; Machine Learning / Open Innovation &amp; Social Impact</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRACTICE / RECOGNIZE ============ -->
+  <section class="page hidden" data-page="practice">
+    <div class="wrap">
+      <div class="practice-layout">
+        <div class="card video-panel">
+          <div class="video-stage">
+            <video id="practiceVideo" autoplay muted playsinline></video>
+            <canvas id="practiceCanvas"></canvas>
+            <div class="cam-status" id="camStatus"><span class="dot"></span>Starting camera…</div>
+          </div>
+          <div class="recognized-banner">
+            <div class="wave-ico">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M3 12h2l2-6 3 14 3-10 2 6h2"/></svg>
+            </div>
+            <div class="text">
+              <div class="eyebrow-white">Detected</div>
+              <div class="label" id="recognizedLabel">—</div>
+              <div class="sub" id="recognizedSub">Sign something you've taught it</div>
+            </div>
+          </div>
+          <div class="hud-row">
+            <div class="hud-chip"><span class="hud-label">Samples trained</span><span class="hud-value" id="hudSamples">0</span></div>
+            <div class="hud-chip"><span class="hud-label">Confidence</span><span class="hud-value" id="hudConfidence">0%</span></div>
+            <div class="hud-chip"><span class="hud-label">Latency</span><span class="hud-value" id="hudLatency">—</span></div>
+          </div>
+        </div>
+
+        <div class="card control-card">
+          <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="custom">Your Custom Vocabulary</button>
+            <button class="mode-tab" data-mode="instant">Instant Gestures <span class="mode-tag">no training</span></button>
+          </div>
+
+          <div id="customVocabPanel">
+            <div>
+              <h3>1. Pick a word to teach</h3>
+              <div class="sign-picker" id="signPicker"></div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <h3 style="margin-bottom:8px;">2. Hold the sign, then press &amp; hold to capture</h3>
+              <button class="record-btn" id="recordBtn">Hold to Record Sample</button>
+              <p class="dataset-note">Capture 8–15 samples per word, varying your hand position slightly each time — it makes recognition much more reliable.</p>
+            </div>
+
+            <div class="control-row" style="margin-top:16px;">
+              <button class="danger" id="clearDataset">Clear all training data</button>
+            </div>
+          </div>
+
+          <div id="instantGesturePanel" class="hidden">
+            <p class="dataset-note" style="margin-bottom:12px;">Google's pretrained model — works immediately, no training. It recognizes 7 universal hand gestures, not full sign-language vocabulary. One of them (🤟) happens to also be real ASL.</p>
+            <div class="gesture-chip-row">
+              <span class="gesture-chip">👍 Thumbs Up</span>
+              <span class="gesture-chip">👎 Thumbs Down</span>
+              <span class="gesture-chip">✋ Open Palm</span>
+              <span class="gesture-chip">✊ Closed Fist</span>
+              <span class="gesture-chip">✌️ Victory</span>
+              <span class="gesture-chip">☝️ Pointing Up</span>
+              <span class="gesture-chip">🤟 I Love You (ASL)</span>
+            </div>
+          </div>
+
+          <div class="control-row" style="margin-top:16px;">
+            <button class="secondary" id="toggleRecognize">Start Recognizing</button>
+          </div>
+
+          <div>
+            <h3 style="margin-bottom:8px;">Recognized so far</h3>
+            <div class="transcript" id="transcriptList"><p class="dataset-note">Nothing yet — train a sign and try it.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MY SIGNS (training log + export/import) ============ -->
+  <section class="page hidden" data-page="mysigns">
+    <div class="wrap">
+      <div class="page-title">
+        <span class="eyebrow">Your saved training data</span>
+        <h2 class="big-title">My Signs</h2>
+        <p class="page-sub">Your trained signs are already saved on this device (in this browser's local storage) — they don't vanish when you close the tab. What <em>does</em> reset them: switching to a new deployed link, clearing your browser data, or using a different device or browser. Export a backup before any of those, and import it after.</p>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="card stat-card"><b id="mySignsWordCount">0</b><p>words trained</p></div>
+        <div class="card stat-card"><b id="mySignsSampleCount">0</b><p>total samples captured</p></div>
+      </div>
+
+      <div class="card panel-card" style="margin-bottom:20px;">
+        <h3>Backup &amp; restore</h3>
+        <p class="dataset-note" style="margin-bottom:14px;">Export saves a file with every word and sample you've trained. Import loads that file back in — on this device, a new deploy link, or a teammate's laptop.</p>
+        <div class="control-row">
+          <button class="primary" id="exportDataBtn">Export as file</button>
+          <button class="secondary" id="importDataBtn">Import from file</button>
+          <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+        </div>
+        <p class="status-line" id="importStatus"></p>
+      </div>
+
+      <div class="card panel-card">
+        <h3>Trained words</h3>
+        <div id="mySignsList" class="my-signs-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SPEECH TO TEXT ============ -->
+  <section class="page hidden" data-page="listen">
+    <div class="wrap">
+      <div class="page-title">
+        <span class="eyebrow">For the person you're talking to</span>
+        <h2 class="big-title">Speech → Text</h2>
+        <p class="page-sub">Hand your phone to them, or set it between you. When they speak, it appears here as text instantly — no call, no second device needed.</p>
+      </div>
+
+      <div class="card listen-panel">
+        <div class="listen-live-text" id="listenLiveText">Tap "Start Listening" and have them speak.</div>
+        <div class="control-row" style="justify-content:center;margin-top:18px;">
+          <button class="primary" id="listenToggleBtn">Start Listening</button>
+          <button class="secondary" id="listenClearBtn">Clear</button>
+        </div>
+        <p class="status-line" id="listenStatus" style="text-align:center;"></p>
+      </div>
+
+      <div>
+        <h3 style="margin:22px 0 10px;font-size:14px;text-align:center;color:var(--muted);">What they've said</h3>
+        <div class="transcript" id="listenHistory"><p class="dataset-note" style="text-align:center;">Nothing yet.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CALL ============ -->
+  <section class="page hidden" data-page="call">
+    <div class="wrap">
+      <div class="page-title">
+        <span class="eyebrow">Beyond in-person communication</span>
+        <h2 class="big-title">SignSpeak Connect</h2>
+        <p class="page-sub">Sign → Speech in both directions. Speech → live captions in both directions. Same AI, same code, running symmetrically on both ends.</p>
+      </div>
+
+      <div class="card call-setup" id="callSetupCard">
+        <span class="eyebrow">Two-way, live, no account needed</span>
+        <h2>Start or join a call</h2>
+        <p>Signs on either end become speech for the other person. Speech on either end becomes live captions. Works the same both directions.</p>
+
+        <div class="call-tabs">
+          <button class="call-tab active" data-tab="create">Create a call</button>
+          <button class="call-tab" data-tab="join">Join a call</button>
+        </div>
+
+        <div id="createTab">
+          <button class="primary" id="createCallBtn">Create my call link</button>
+          <div class="share-box hidden" id="shareBox">
+            <input type="text" id="shareLinkInput" readonly>
+            <button class="secondary" id="copyLinkBtn">Copy</button>
+          </div>
+          <div class="control-row" id="shareActions" style="justify-content:center;margin-top:10px;"></div>
+        </div>
+
+        <div id="joinTab" class="hidden">
+          <div class="join-row">
+            <input type="text" id="joinIdInput" placeholder="Paste the call code or link here">
+            <button class="primary" id="joinCallBtn">Join</button>
+          </div>
+        </div>
+
+        <p class="status-line" id="callStatus"></p>
+      </div>
+
+      <div class="call-active" id="callActive">
+        <div class="video-grid">
+          <div class="call-video-box local">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <span class="tag">You</span>
+            <div class="caption-overlay" id="localCaption"></div>
+          </div>
+          <div class="call-video-box remote">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <span class="tag">Them</span>
+            <div class="caption-overlay" id="remoteCaption"></div>
+          </div>
+        </div>
+        <div class="call-controls">
+          <button class="danger" id="endCallBtn">End call</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 4: AI MODELS & TECHNOLOGIES ============ -->
+  <section class="page hidden" data-page="tech">
+    <div class="wrap">
+      <div class="page-title">
+        <h2 class="big-title"><span class="page-num">09.</span> AI Models &amp; Technologies</h2>
+        <p class="page-sub">A combination of proven AI, simple ML, and built-in browser APIs — no LLM, no server.</p>
+      </div>
+
+      <div class="tech-card-grid">
+        <div class="card tech-card">
+          <div class="tech-card-num">1</div>
+          <h3>MediaPipe Hand Landmarker <span>(Google)</span></h3>
+          <div class="tech-card-sub">Hand Tracking (Computer Vision AI)</div>
+          <ul class="bullet-list">
+            <li>Pretrained deep learning model (CNN-based) by Google</li>
+            <li>Detects 21 precise key points on each hand in real time</li>
+            <li>Gives exact hand landmark coordinates to understand the sign</li>
+          </ul>
+          <div class="tech-tag">Used via CDN (MediaPipe Tasks Vision)</div>
+        </div>
+
+        <div class="card tech-card">
+          <div class="tech-card-num">2</div>
+          <h3>k-Nearest Neighbors <span>(k-NN)</span></h3>
+          <div class="tech-card-sub">Sign Classification (Our Part)</div>
+          <ul class="bullet-list">
+            <li>Our own ML model</li>
+            <li>Takes hand landmark points from MediaPipe</li>
+            <li>Uses k-NN (similarity matching) to find which trained sign it most closely matches</li>
+            <li>Trained live on our own captured data</li>
+          </ul>
+          <div class="tech-tag">Simple. Fast. No GPU required.</div>
+        </div>
+
+        <div class="card tech-card">
+          <div class="tech-card-num">3</div>
+          <h3>Speech Synthesis <span>(Browser API)</span></h3>
+          <div class="tech-card-sub">Text to Speech</div>
+          <ul class="bullet-list">
+            <li>Browser's built-in Speech Synthesis API (Chrome/Edge/Safari)</li>
+            <li>Converts the recognized word into natural speech instantly</li>
+            <li>No separate model or API key required</li>
+          </ul>
+          <div class="tech-tag">Built-in. Free. Works offline.</div>
+        </div>
+
+        <div class="card tech-card">
+          <div class="tech-card-num">4</div>
+          <h3>Speech Recognition <span>(Browser API)</span></h3>
+          <div class="tech-card-sub">Speech to Text (for Calls)</div>
+          <ul class="bullet-list">
+            <li>Browser's built-in Speech Recognition API (webkit)</li>
+            <li>Converts the hearing user's speech to live text captions during calls</li>
+            <li>Used only in the SignSpeak Connect feature</li>
+          </ul>
+          <div class="tech-tag">Built-in. Real-time. No extra cost.</div>
+        </div>
+      </div>
+
+      <div class="tech-strip-inner" style="padding:0;">
+        <div class="label">Tech stack at a glance</div>
+        <div class="tech-row">
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11V6a3 3 0 0 1 6 0v5m-6 0a3 3 0 0 0-3 3v2a7 7 0 0 0 7 7h1a7 7 0 0 0 7-7v-3a2 2 0 0 0-4 0"/></svg></div><span>MediaPipe Hand Landmarker</span></div>
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="6" r="1.6"/><circle cx="19" cy="6" r="1.6"/><circle cx="5" cy="18" r="1.6"/><circle cx="19" cy="18" r="1.6"/><path d="M12 12L5 6M12 12l7-6M12 12l-7 6M12 12l7 6"/></svg></div><span>k-NN (Our Classifier)</span></div>
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></div><span>Speech Synthesis (TTS)</span></div>
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4"/></svg></div><span>Speech Recognition (STT)</span></div>
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8 15.8 6.2M8.2 13.2l7.6 4.6"/></svg></div><span>PeerJS (WebRTC for Calls)</span></div>
+          <div class="tech-item"><div class="circle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div><span>localStorage (Store Training Data)</span></div>
+        </div>
+      </div>
+
+      <div class="card no-llm-callout" style="margin-top:24px;">
+        <div class="ring"></div>
+        <p><b>No LLMs. No GPT. No Claude.</b><br>This is a computer vision + classic ML pipeline, not an LLM-based app. No text generation, no chatbot, no external AI APIs.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <svg class="skyline" viewBox="0 0 1200 90" preserveAspectRatio="none">
+    <rect x="0" y="40" width="60" height="50" fill="#1a2c4c"/>
+    <rect x="70" y="20" width="45" height="70" fill="#16233f"/>
+    <rect x="125" y="50" width="70" height="40" fill="#1a2c4c"/>
+    <rect x="205" y="10" width="40" height="80" fill="#16233f"/>
+    <rect x="255" y="35" width="55" height="55" fill="#1a2c4c"/>
+    <rect x="320" y="55" width="80" height="35" fill="#16233f"/>
+    <rect x="410" y="15" width="50" height="75" fill="#1a2c4c"/>
+    <rect x="470" y="45" width="60" height="45" fill="#16233f"/>
+    <rect x="540" y="25" width="45" height="65" fill="#1a2c4c"/>
+    <rect x="595" y="55" width="90" height="35" fill="#16233f"/>
+    <rect x="695" y="10" width="40" height="80" fill="#1a2c4c"/>
+    <rect x="745" y="40" width="65" height="50" fill="#16233f"/>
+    <rect x="820" y="20" width="50" height="70" fill="#1a2c4c"/>
+    <rect x="880" y="50" width="75" height="40" fill="#16233f"/>
+    <rect x="965" y="15" width="45" height="75" fill="#1a2c4c"/>
+    <rect x="1020" y="45" width="60" height="45" fill="#16233f"/>
+    <rect x="1090" y="30" width="110" height="60" fill="#16233f"/>
+  </svg>
+  <div class="wrap site-footer-inner">
+    <div class="track">Track: <b>AI &amp; Machine Learning / Open Innovation &amp; Social Impact</b></div>
+    <div class="tagline">Inclusion through innovation<br>Tech for a more inclusive tomorrow<br>Same people, more opportunities</div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<!-- PeerJS (WebRTC + free signaling broker) — plain global script, not a module -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<script type="module">
+import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+
+/* ============================================================
+   Shared helpers
+   ============================================================ */
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
+
+const SIGN_WORDS = ["Hello","Help","Yes","No","Thank You","Water","Food","Pain","Emergency","Please"];
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+function go(page){
+  $$(".page").forEach(p=>p.classList.toggle("hidden", p.dataset.page!==page));
+  $$(".nav-item").forEach(b=>b.classList.toggle("active", b.dataset.page===page));
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(page==="practice") startPracticeCamera();
+  else stopPracticeCamera();
+  if(page==="mysigns") renderMySignsPage(); // function declared later in file; hoisted, safe to call here
+}
+$$(".nav-item").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
+$$("[data-goto]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.goto)));
+
+/* ============================================================
+   DATASET — stored in localStorage, shared between Practice and Call pages
+   Each sample: { label, vector: [42 numbers] }
+   vector = 21 landmarks x (x,y), normalized relative to the wrist so
+   position/scale in frame doesn't affect matching.
+   ============================================================ */
+const DATASET_KEY = "signspeak_dataset_v1";
+function loadDataset(){ try{ return JSON.parse(localStorage.getItem(DATASET_KEY)) || []; }catch(e){ return []; } }
+function saveDataset(ds){ localStorage.setItem(DATASET_KEY, JSON.stringify(ds)); }
+let dataset = loadDataset();
+
+function normalizeLandmarks(landmarks){
+  // landmarks: array of 21 {x,y,z} in [0,1] image-relative coords
+  const wrist = landmarks[0];
+  const mid = landmarks[9]; // middle finger MCP, used as a scale reference
+  const scale = Math.max(0.001, Math.hypot(mid.x-wrist.x, mid.y-wrist.y));
+  const vec = [];
+  for(const lm of landmarks){
+    vec.push((lm.x-wrist.x)/scale, (lm.y-wrist.y)/scale);
+  }
+  return vec;
+}
+
+function euclidean(a,b){
+  let sum=0;
+  for(let i=0;i<a.length;i++){ const d=a[i]-b[i]; sum+=d*d; }
+  return Math.sqrt(sum);
+}
+
+const NEIGHBOR_K = 3;
+const MATCH_DISTANCE_THRESHOLD = 1.6; // tune this if recognition feels too strict/loose
+
+function classify(vector){
+  if(dataset.length===0) return null;
+  const scored = dataset.map(s=>({label:s.label, dist:euclidean(vector, s.vector)}))
+                         .sort((a,b)=>a.dist-b.dist);
+  const top = scored.slice(0, Math.min(NEIGHBOR_K, scored.length));
+  if(top[0].dist > MATCH_DISTANCE_THRESHOLD) return null; // too far from anything known
+  const votes = {};
+  top.forEach(t=>{ votes[t.label]=(votes[t.label]||0)+1; });
+  let bestLabel=top[0].label, bestVotes=0;
+  Object.entries(votes).forEach(([label,count])=>{ if(count>bestVotes){bestVotes=count;bestLabel=label;} });
+  return bestLabel;
+}
+
+function sampleCountFor(label){ return dataset.filter(s=>s.label===label).length; }
+
+// Additive — used only for the live HUD readout on the Practice page.
+// Kept separate from classify() so every already-tested call site (Practice's
+// recognition loop, the Call page's relay loop) keeps using the exact
+// original function untouched.
+function classifyWithConfidence(vector){
+  if(dataset.length===0) return {label:null, confidence:0, distance:null};
+  const scored = dataset.map(s=>({label:s.label, dist:euclidean(vector, s.vector)})).sort((a,b)=>a.dist-b.dist);
+  const top = scored.slice(0, Math.min(NEIGHBOR_K, scored.length));
+  const nearestDist = top[0].dist;
+  const confidence = Math.max(0, Math.min(100, Math.round((1 - nearestDist/MATCH_DISTANCE_THRESHOLD)*100)));
+  if(nearestDist > MATCH_DISTANCE_THRESHOLD) return {label:null, confidence, distance:nearestDist};
+  const votes = {};
+  top.forEach(t=>{ votes[t.label]=(votes[t.label]||0)+1; });
+  let bestLabel=top[0].label, bestVotes=0;
+  Object.entries(votes).forEach(([label,count])=>{ if(count>bestVotes){bestVotes=count;bestLabel=label;} });
+  return {label:bestLabel, confidence, distance:nearestDist};
+}
+
+function renderSignPicker(){
+  $("#signPicker").innerHTML = SIGN_WORDS.map(w=>`
+    <button class="sign-btn ${w===selectedSign?'selected':''}" data-word="${w}">${w} <span class="count">(${sampleCountFor(w)})</span></button>
+  `).join("");
+  $$(".sign-btn").forEach(b=>b.addEventListener("click",()=>{ selectedSign=b.dataset.word; renderSignPicker(); }));
+}
+
+$("#clearDataset").addEventListener("click",()=>{
+  if(!confirm("This deletes all trained samples. Continue?")) return;
+  dataset = []; saveDataset(dataset); renderSignPicker();
+  toast("Training data cleared.");
+});
+
+/* ============================================================
+   GestureRecognizer setup (shared by Practice + Call pages)
+
+   We use GestureRecognizer instead of plain HandLandmarker because it gives
+   us BOTH the 21 hand landmarks (for our custom-trained k-NN vocabulary)
+   AND Google's pretrained classification into 7 universal hand gestures —
+   from a single model load. That's what powers the new "Instant Gestures"
+   mode: zero training required, because it's Google's pretrained model,
+   not ours. It is NOT full sign-language vocabulary — see CANNED_GESTURE_LABELS
+   below for exactly what it can recognize and why.
+   ============================================================ */
+let gestureRecognizer = null;
+async function initGestureRecognizer(){
+  if(gestureRecognizer) return gestureRecognizer;
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+  );
+  gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+      delegate: "GPU",
+    },
+    runningMode: "VIDEO",
+    numHands: 1,
+  });
+  return gestureRecognizer;
+}
+
+// Google's pretrained model recognizes exactly these 7 categories — this is
+// real, but it is a small set of universal hand gestures, not sign-language
+// words. Only ILoveYou happens to also be an actual ASL sign; the rest are
+// generic gestures, labeled honestly as such rather than mapped to invented
+// "meanings."
+const CANNED_GESTURE_LABELS = {
+  Thumb_Up: "Thumbs Up",
+  Thumb_Down: "Thumbs Down",
+  Open_Palm: "Open Palm",
+  Closed_Fist: "Closed Fist",
+  Victory: "Victory ✌️",
+  Pointing_Up: "Pointing Up",
+  ILoveYou: "I Love You 🤟 (real ASL sign)",
+};
+const CANNED_GESTURE_MIN_SCORE = 0.6;
+
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4], [0,5],[5,6],[6,7],[7,8], [5,9],[9,10],[10,11],[11,12],
+  [9,13],[13,14],[14,15],[15,16], [13,17],[17,18],[18,19],[19,20], [0,17],
+];
+
+function drawLandmarks(ctx, landmarks, w, h){
+  ctx.clearRect(0,0,w,h);
+  // Neon HUD glow — real bug fix: this used to be leftover teal/coral from
+  // before the navy restyle, which no longer matched the theme at all.
+  ctx.shadowColor = "#22d3ee"; ctx.shadowBlur = 8;
+  ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 2;
+  HAND_CONNECTIONS.forEach(([a,b])=>{
+    ctx.beginPath();
+    ctx.moveTo(landmarks[a].x*w, landmarks[a].y*h);
+    ctx.lineTo(landmarks[b].x*w, landmarks[b].y*h);
+    ctx.stroke();
+  });
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = "#22d3ee";
+  landmarks.forEach(lm=>{
+    ctx.beginPath();
+    ctx.arc(lm.x*w, lm.y*h, 3.5, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+}
+
+/* ============================================================
+   PRACTICE PAGE
+   ============================================================ */
+let selectedSign = SIGN_WORDS[0];
+let practiceStream = null;
+let practiceRunning = false;
+let recognizing = false;
+let recordingHeld = false;
+let recordTimer = null;
+let latestLandmarks = null;
+let recognitionMode = "custom"; // "custom" | "instant"
+
+async function startPracticeCamera(){
+  if(practiceStream) return;
+  const video = $("#practiceVideo");
+  try{
+    practiceStream = await navigator.mediaDevices.getUserMedia({ video:{width:640,height:480}, audio:false });
+    video.srcObject = practiceStream;
+    await video.play();
+    $("#camStatus").textContent = "Loading hand-tracking model…";
+    await initGestureRecognizer();
+    $("#camStatus").textContent = "Camera live";
+    practiceRunning = true;
+    requestAnimationFrame(practiceLoop);
+  }catch(err){
+    $("#camStatus").textContent = "Camera unavailable";
+    toast("Couldn't access your camera: " + (err.message||"permission denied"));
+  }
+}
+function stopPracticeCamera(){
+  practiceRunning = false;
+  if(practiceStream){ practiceStream.getTracks().forEach(t=>t.stop()); practiceStream=null; }
+}
+
+let stableLabel = null, stableCount = 0, lastSpokenLabel = null, lastSpokenAt = 0;
+const STABLE_FRAMES_NEEDED = 8;
+const REPEAT_COOLDOWN_MS = 2500;
+
+function practiceLoop(){
+  if(!practiceRunning) return;
+  const video = $("#practiceVideo"), canvas = $("#practiceCanvas");
+  if(video.videoWidth){
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const frameStart = performance.now();
+    const result = gestureRecognizer.recognizeForVideo(video, frameStart);
+    const latencyMs = performance.now() - frameStart;
+    updateHud(latencyMs);
+    const ctx = canvas.getContext("2d");
+    if(result.landmarks && result.landmarks.length){
+      latestLandmarks = result.landmarks[0];
+      drawLandmarks(ctx, latestLandmarks, canvas.width, canvas.height);
+      if(recognizing) runRecognitionFrame(latestLandmarks, result.gestures, $("#recognizedLabel"), $("#recognizedSub"), speakAndLog);
+    } else {
+      latestLandmarks = null;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(recognizing) resetStability();
+      updateHudConfidence(0);
+    }
+  }
+  requestAnimationFrame(practiceLoop);
+}
+
+// Real, measured stats — not placeholders. Latency is the actual
+// recognizeForVideo() time for this frame; samples/confidence come straight
+// from the dataset and classifier.
+function updateHud(latencyMs){
+  const hudLatency = $("#hudLatency");
+  const hudSamples = $("#hudSamples");
+  if(hudLatency) hudLatency.textContent = latencyMs.toFixed(1)+"ms";
+  if(hudSamples) hudSamples.textContent = recognitionMode==="instant" ? "n/a (pretrained)" : dataset.length;
+}
+function updateHudConfidence(pct){
+  const hudConf = $("#hudConfidence");
+  if(hudConf) hudConf.textContent = pct+"%";
+}
+
+function resetStability(){ stableLabel=null; stableCount=0; }
+
+function setRecognitionMode(mode){
+  recognitionMode = mode;
+  resetStability();
+  $$(".mode-tab").forEach(b=>b.classList.toggle("active", b.dataset.mode===mode));
+  $("#customVocabPanel").classList.toggle("hidden", mode!=="custom");
+  $("#instantGesturePanel").classList.toggle("hidden", mode!=="instant");
+  $("#recognizedLabel").textContent = "—";
+  $("#recognizedSub").textContent = mode==="instant" ? "Try a thumbs up, victory sign, or 🤟" : "Sign something you've taught it";
+}
+$$(".mode-tab").forEach(b=>b.addEventListener("click",()=>setRecognitionMode(b.dataset.mode)));
+
+function runRecognitionFrame(landmarks, gestureLists, labelEl, subEl, onSpeak){
+  let label = null, confidence = 0;
+
+  if(recognitionMode === "instant"){
+    // Pretrained path: Google's model, zero training. See CANNED_GESTURE_LABELS
+    // for exactly what it recognizes — a small set of universal gestures,
+    // not full sign-language vocabulary.
+    const top = gestureLists && gestureLists[0] && gestureLists[0][0];
+    if(top && top.categoryName !== "None" && top.score >= CANNED_GESTURE_MIN_SCORE){
+      label = CANNED_GESTURE_LABELS[top.categoryName] || top.categoryName;
+      confidence = Math.round(top.score*100);
+    }
+  } else {
+    // Custom path: your own trained vocabulary, unchanged from before.
+    const vec = normalizeLandmarks(landmarks);
+    const r = classifyWithConfidence(vec);
+    label = r.label; confidence = r.confidence;
+  }
+  updateHudConfidence(confidence);
+
+  if(label && label===stableLabel){ stableCount++; }
+  else { stableLabel = label; stableCount = 1; }
+
+  if(stableCount>=STABLE_FRAMES_NEEDED && label){
+    const now = Date.now();
+    const canSpeak = label!==lastSpokenLabel || (now-lastSpokenAt)>REPEAT_COOLDOWN_MS;
+    labelEl.textContent = label;
+    subEl.textContent = "Recognized";
+    if(canSpeak){
+      onSpeak(label);
+      lastSpokenLabel = label; lastSpokenAt = now;
+      stableCount = 0; // require a fresh stable read before speaking again
+    }
+  } else if(!label){
+    labelEl.textContent = "—";
+    subEl.textContent = "Sign something you've taught it";
+  }
+}
+
+function speakText(text){
+  if(!("speechSynthesis" in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.95;
+  // Explicit max — the Web Speech API's volume range is 0 to 1, and this
+  // was already defaulting to 1 (max), so this doesn't change loudness.
+  // A webpage genuinely cannot push audio louder than "device max volume";
+  // that ceiling is enforced by the browser/OS, not something JS can raise.
+  utter.volume = 1.0;
+  speechSynthesis.speak(utter);
+}
+
+function escapeHtml(str){
+  return str.replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+}
+function addTranscriptRow(text){
+  const list = $("#transcriptList");
+  if(list.querySelector(".dataset-note")) list.innerHTML = "";
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<time>${time}</time>${text}`;
+  list.prepend(row);
+}
+function speakAndLog(label){ speakText(label); addTranscriptRow(label); }
+
+$("#recordBtn").addEventListener("pointerdown", ()=>{
+  if(!latestLandmarks){ toast("No hand detected — make sure your hand is visible."); return; }
+  recordingHeld = true;
+  $("#recordBtn").classList.add("recording");
+  $("#recordBtn").textContent = "Recording… keep holding the sign";
+  recordTimer = setInterval(()=>{
+    if(latestLandmarks){
+      dataset.push({ label:selectedSign, vector: normalizeLandmarks(latestLandmarks) });
+      saveDataset(dataset);
+      renderSignPicker();
+    }
+  }, 150);
+});
+function stopRecording(){
+  if(!recordingHeld) return;
+  recordingHeld = false;
+  clearInterval(recordTimer);
+  $("#recordBtn").classList.remove("recording");
+  $("#recordBtn").textContent = "Hold to Record Sample";
+}
+$("#recordBtn").addEventListener("pointerup", stopRecording);
+$("#recordBtn").addEventListener("pointerleave", stopRecording);
+
+$("#toggleRecognize").addEventListener("click", ()=>{
+  if(dataset.length===0){ toast("Train at least one sign first."); return; }
+  recognizing = !recognizing;
+  resetStability();
+  $("#toggleRecognize").textContent = recognizing ? "Stop Recognizing" : "Start Recognizing";
+  if(!recognizing){ $("#recognizedLabel").textContent="—"; $("#recognizedSub").textContent="Sign something you've taught it"; }
+});
+
+renderSignPicker();
+
+/* ============================================================
+   MY SIGNS PAGE — view, delete, export, and import trained data.
+   This is the real fix for "training vanishes": data is already persisted
+   in localStorage per-browser-per-origin, but a new deploy link (different
+   origin) or a different device starts fresh. Export/Import moves the
+   actual dataset across that boundary as a portable JSON file.
+   ============================================================ */
+function renderMySignsPage(){
+  const words = [...new Set(dataset.map(s=>s.label))];
+  $("#mySignsWordCount").textContent = words.length;
+  $("#mySignsSampleCount").textContent = dataset.length;
+
+  if(!words.length){
+    $("#mySignsList").innerHTML = `<p class="dataset-note">No signs trained yet — head to "Practice & Recognize" and train a few.</p>`;
+    return;
+  }
+  $("#mySignsList").innerHTML = words.map(w=>`
+    <div class="my-signs-row">
+      <span class="word">${escapeHtml(w)}</span>
+      <span class="count">${sampleCountFor(w)} samples</span>
+      <button data-word="${escapeHtml(w)}">Delete</button>
+    </div>
+  `).join("");
+  $$("#mySignsList button").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm(`Delete all samples for "${b.dataset.word}"?`)) return;
+    dataset = dataset.filter(s=>s.label!==b.dataset.word);
+    saveDataset(dataset);
+    renderMySignsPage();
+    renderSignPicker();
+    toast(`Deleted "${b.dataset.word}".`);
+  }));
+}
+
+$("#exportDataBtn").addEventListener("click", ()=>{
+  if(!dataset.length){ toast("Nothing trained yet to export."); return; }
+  const blob = new Blob([JSON.stringify({ version:1, exportedAt:new Date().toISOString(), dataset }, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `signspeak-training-data-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Exported. Keep this file safe — it's your trained signs.");
+});
+
+$("#importDataBtn").addEventListener("click", ()=> $("#importDataInput").click());
+$("#importDataInput").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = $("#importStatus");
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      const incoming = Array.isArray(parsed) ? parsed : parsed.dataset;
+      if(!Array.isArray(incoming)) throw new Error("File doesn't look like a SignSpeak export.");
+      const valid = incoming.every(s=> s && typeof s.label==="string" && Array.isArray(s.vector));
+      if(!valid) throw new Error("File doesn't look like a SignSpeak export.");
+      const beforeCount = dataset.length;
+      dataset = dataset.concat(incoming); // merge, don't overwrite what's already here
+      saveDataset(dataset);
+      renderMySignsPage();
+      renderSignPicker();
+      statusEl.textContent = "";
+      toast(`Imported ${dataset.length-beforeCount} samples.`);
+    }catch(err){
+      statusEl.textContent = "Couldn't read that file — " + (err.message||"is it a SignSpeak export?");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = ""; // allow re-importing the same filename later
+});
+
+/* ============================================================
+   SPEECH -> TEXT PAGE — standalone, no call/connection needed.
+   For the hearing person to speak into, right there in person; the deaf
+   person reads it off the same screen. Completely independent of the
+   SignSpeak Connect calling feature — just this device, this page.
+   ============================================================ */
+let listenRecognition = null;
+let listenActive = false;
+
+function setupListenPage(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const toggleBtn = $("#listenToggleBtn");
+  const liveText = $("#listenLiveText");
+  const statusEl = $("#listenStatus");
+  const historyEl = $("#listenHistory");
+
+  if(!SR){
+    toggleBtn.disabled = true;
+    statusEl.textContent = "Speech recognition isn't supported in this browser — try Chrome.";
+    return;
+  }
+
+  toggleBtn.addEventListener("click", ()=>{
+    if(listenActive){ stopListening(); }
+    else { startListening(); }
+  });
+
+  function startListening(){
+    listenRecognition = new SR();
+    listenRecognition.continuous = true;
+    listenRecognition.interimResults = true;
+    listenRecognition.onresult = (e)=>{
+      let finalText = "", interimText = "";
+      for(let i=e.resultIndex; i<e.results.length; i++){
+        const transcript = e.results[i][0].transcript;
+        if(e.results[i].isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+      if(finalText.trim()){
+        addListenHistoryRow(finalText.trim());
+        liveText.textContent = finalText.trim();
+      } else if(interimText.trim()){
+        liveText.textContent = interimText.trim();
+      }
+    };
+    listenRecognition.onerror = (e)=>{
+      if(e.error === "not-allowed"){ statusEl.textContent = "Microphone access denied."; stopListening(); }
+    };
+    listenRecognition.onend = ()=>{ if(listenActive) try{ listenRecognition.start(); }catch(err){} }; // auto-restart
+    try{
+      listenRecognition.start();
+      listenActive = true;
+      toggleBtn.textContent = "Stop Listening";
+      statusEl.textContent = "Listening…";
+      liveText.textContent = "Listening — go ahead and speak.";
+    }catch(err){
+      statusEl.textContent = "Couldn't start the microphone.";
+    }
+  }
+  function stopListening(){
+    listenActive = false;
+    if(listenRecognition){ try{ listenRecognition.stop(); }catch(err){} listenRecognition=null; }
+    toggleBtn.textContent = "Start Listening";
+    statusEl.textContent = "";
+    liveText.textContent = "Tap \"Start Listening\" and have them speak.";
+  }
+
+  $("#listenClearBtn").addEventListener("click", ()=>{
+    historyEl.innerHTML = `<p class="dataset-note" style="text-align:center;">Nothing yet.</p>`;
+  });
+}
+
+function addListenHistoryRow(text){
+  const historyEl = $("#listenHistory");
+  if(historyEl.querySelector(".dataset-note")) historyEl.innerHTML = "";
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<time>${time}</time>${escapeHtml(text)}`;
+  historyEl.prepend(row);
+}
+setupListenPage();
+
+/* ============================================================
+   CALL PAGE — PeerJS video call + bidirectional sign/speech relay
+   ============================================================ */
+let peer = null, mediaConn = null, dataConn = null, callStream = null;
+let callHandLandmarker = null, callRunning = false;
+let speechRec = null;
+
+function shortId(){ return Math.random().toString(36).slice(2,8); }
+
+$$(".call-tab").forEach(tab=>tab.addEventListener("click",()=>{
+  $$(".call-tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  $("#createTab").classList.toggle("hidden", tab.dataset.tab!=="create");
+  $("#joinTab").classList.toggle("hidden", tab.dataset.tab!=="join");
+}));
+
+async function getCallStream(){
+  if(callStream) return callStream;
+  callStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  $("#localVideo").srcObject = callStream;
+  return callStream;
+}
+
+function extractIdFromInput(value){
+  value = value.trim();
+  try{
+    const url = new URL(value);
+    const id = url.searchParams.get("call");
+    if(id) return id;
+  }catch(e){ /* not a URL, treat as raw id */ }
+  return value;
+}
+
+// PeerJS error types, translated into what a person should actually do —
+// the raw e.type strings ("peer-unavailable", "network", etc.) aren't
+// meaningful to someone testing a call for the first time.
+function friendlyPeerError(e){
+  const map = {
+    "peer-unavailable": "That call link isn't active — make sure the other person tapped \"Create my call link\" first, and that you're both using the exact same link.",
+    "network": "Network issue reaching the call service — check your connection and try again.",
+    "webrtc": "Your browser or network blocked the video connection. Try a different network (some WiFi/corporate networks block WebRTC), or use Chrome.",
+    "server-error": "Couldn't reach the call service right now — try again in a moment.",
+    "socket-error": "Lost connection to the call service — try again.",
+    "disconnected": "Disconnected from the call service — reconnecting…",
+  };
+  return map[e.type] || ("Connection error: " + e.type);
+}
+function wirePeerLifecycle(p){
+  p.on("error", e=>{ $("#callStatus").textContent = friendlyPeerError(e); });
+  p.on("disconnected", ()=>{
+    $("#callStatus").textContent = "Reconnecting…";
+    try{ p.reconnect(); }catch(err){}
+  });
+}
+
+$("#createCallBtn").addEventListener("click", async ()=>{
+  $("#callStatus").textContent = "Setting up your call…";
+  try{
+    await getCallStream();
+    const id = "signspeak-" + shortId();
+    peer = new Peer(id);
+    wirePeerLifecycle(peer);
+    peer.on("open", ()=>{
+      const link = `${location.origin}${location.pathname}?call=${id}`;
+      $("#shareLinkInput").value = link;
+      $("#shareBox").classList.remove("hidden");
+      $("#shareActions").innerHTML = `<a class="secondary" style="text-decoration:none;display:inline-block;" target="_blank" href="https://wa.me/?text=${encodeURIComponent("Join my SignSpeak call: "+link)}">Share via WhatsApp</a>`;
+      $("#callStatus").textContent = "Waiting for the other person to join…";
+    });
+    peer.on("call", incomingCall=>{
+      incomingCall.answer(callStream);
+      wireMediaConnection(incomingCall);
+    });
+    peer.on("connection", conn=>{ wireDataConnection(conn); });
+  }catch(err){
+    $("#callStatus").textContent = "Couldn't access camera/mic.";
+    toast(err.message||"Camera/mic permission denied.");
+  }
+});
+
+$("#copyLinkBtn").addEventListener("click", ()=>{
+  $("#shareLinkInput").select();
+  navigator.clipboard?.writeText($("#shareLinkInput").value);
+  toast("Link copied.");
+});
+
+$("#joinCallBtn").addEventListener("click", async ()=>{
+  const targetId = extractIdFromInput($("#joinIdInput").value);
+  if(!targetId){ toast("Paste a call link or code first."); return; }
+  $("#callStatus").textContent = "Joining…";
+  try{
+    await getCallStream();
+    peer = new Peer();
+    wirePeerLifecycle(peer);
+    peer.on("open", ()=>{
+      const outgoingCall = peer.call(targetId, callStream);
+      wireMediaConnection(outgoingCall);
+      const conn = peer.connect(targetId);
+      wireDataConnection(conn);
+    });
+  }catch(err){
+    $("#callStatus").textContent = "Couldn't access camera/mic.";
+    toast(err.message||"Camera/mic permission denied.");
+  }
+});
+
+// Auto-fill + auto-join if the page was opened via a shared link (?call=ID)
+const urlParams = new URLSearchParams(location.search);
+if(urlParams.get("call")){
+  go("call");
+  $$(".call-tab").forEach(t=>t.classList.toggle("active", t.dataset.tab==="join"));
+  $("#createTab").classList.add("hidden");
+  $("#joinTab").classList.remove("hidden");
+  $("#joinIdInput").value = urlParams.get("call");
+}
+
+function wireMediaConnection(conn){
+  mediaConn = conn;
+  conn.on("stream", remoteStream=>{
+    const remoteVideo = $("#remoteVideo");
+    remoteVideo.srcObject = remoteStream;
+    $("#callActive").classList.add("live");
+    $("#callStatus").textContent = "Connected.";
+    startCallRecognitionAndSpeech();
+
+    // REAL BUG FIX: most mobile browsers (iOS Safari especially) block
+    // autoplay of unmuted video/audio without a direct tap, even with
+    // `autoplay` set. That would make the other person's video/audio
+    // silently fail to start, looking exactly like "the call doesn't work."
+    // Attempt to play, and if the browser blocks it, show a tap-to-enable
+    // button (a real user gesture, which browsers do allow).
+    const playPromise = remoteVideo.play();
+    if(playPromise !== undefined){
+      playPromise.catch(()=>{
+        showTapToEnableAudio(remoteVideo);
+      });
+    }
+  });
+  conn.on("close", endCall);
+}
+function showTapToEnableAudio(remoteVideo){
+  if($("#tapToEnableBtn")) return; // already showing
+  const btn = document.createElement("button");
+  btn.id = "tapToEnableBtn";
+  btn.className = "primary tap-to-enable-btn";
+  btn.textContent = "Tap to enable audio/video";
+  btn.onclick = ()=>{
+    remoteVideo.play().then(()=>btn.remove()).catch(()=>{});
+  };
+  $(".call-video-box.remote").appendChild(btn);
+}
+function wireDataConnection(conn){
+  dataConn = conn;
+  conn.on("data", payload=>{
+    if(payload.type==="sign"){
+      $("#remoteCaption").textContent = payload.text;
+      speakText(payload.text);
+    } else if(payload.type==="speech"){
+      $("#remoteCaption").textContent = payload.text;
+    }
+  });
+}
+function sendToPeer(type, text){
+  if(dataConn && dataConn.open) dataConn.send({type, text});
+}
+
+async function startCallRecognitionAndSpeech(){
+  // Sign -> speech (this user signs, the other person hears it).
+  // Calls always use your trained custom vocabulary, not Instant Gestures —
+  // real words like "help" or "water" are what matter in a conversation.
+  callHandLandmarker = await initGestureRecognizer();
+  callRunning = true;
+  let callStableLabel=null, callStableCount=0, callLastSpoken=null, callLastSpokenAt=0;
+  function loop(){
+    if(!callRunning) return;
+    const video = $("#localVideo");
+    if(video.videoWidth){
+      const result = callHandLandmarker.recognizeForVideo(video, performance.now());
+      if(result.landmarks && result.landmarks.length){
+        const vec = normalizeLandmarks(result.landmarks[0]);
+        const label = classify(vec);
+        if(label && label===callStableLabel) callStableCount++;
+        else { callStableLabel=label; callStableCount=1; }
+        if(label && callStableCount>=STABLE_FRAMES_NEEDED){
+          const now = Date.now();
+          if(label!==callLastSpoken || (now-callLastSpokenAt)>REPEAT_COOLDOWN_MS){
+            $("#localCaption").textContent = label;
+            sendToPeer("sign", label);
+            callLastSpoken = label; callLastSpokenAt = now; callStableCount = 0;
+          }
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  // Speech -> text captions (this user talks, the other person reads it)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(SR){
+    speechRec = new SR();
+    speechRec.continuous = true;
+    speechRec.interimResults = true;
+    speechRec.onresult = (e)=>{
+      const transcript = Array.from(e.results).map(r=>r[0].transcript).join(" ").trim();
+      if(transcript){ sendToPeer("speech", transcript); }
+    };
+    speechRec.onerror = ()=>{};
+    speechRec.onend = ()=>{ if(callRunning) try{ speechRec.start(); }catch(e){} }; // auto-restart
+    try{ speechRec.start(); }catch(e){}
+  }
+}
+
+function endCall(){
+  callRunning = false;
+  if(speechRec){ try{ speechRec.stop(); }catch(e){} speechRec=null; }
+  if(callStream){ callStream.getTracks().forEach(t=>t.stop()); callStream=null; }
+  if(mediaConn) try{ mediaConn.close(); }catch(e){}
+  if(dataConn) try{ dataConn.close(); }catch(e){}
+  if(peer) try{ peer.destroy(); }catch(e){}
+  peer=null; mediaConn=null; dataConn=null;
+  $("#callActive").classList.remove("live");
+  $("#shareBox").classList.add("hidden");
+  $("#shareActions").innerHTML = "";
+  $("#callStatus").textContent = "Call ended.";
+}
+$("#endCallBtn").addEventListener("click", endCall);
+
+/* Expose a couple of pure functions for testing */
+window.__signspeak_internal = { normalizeLandmarks, euclidean, classify, extractIdFromInput, sampleCountFor };
+</script>
+</body>
+</html>
+<script async src="/.netlify/scripts/hud?variant=public" data-nf-variant="public" data-netlify-site-id="fea411d3-f324-4e8d-9774-a8e9e8ae8f0a" data-app-host="app.netlify.com"></script>
