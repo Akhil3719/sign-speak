@@ -6,7 +6,7 @@ SignSpeak is a real-time, browser-based accessibility tool that translates custo
 **Simple AI. Real People. Real Impact.**  
 SignSpeak is a real-time accessibility tool that lets you train custom signs through your webcam, recognizes them instantly, and speaks them out loud. It bridges the communication gap between the Deaf/Hard-of-Hearing community and hearing individuals without requiring anyone to learn a new language, buy expensive hardware, or install native apps.
 
-🌐 **Live Demo:** [Insert Your Deployed Link Here]
+🌐 **Live Demo:** (https://sparkling-sherbet-365f8f.netlify.app)
 
 ## 💡 The Problem
 * **430M+ people** worldwide live with disabling hearing loss (WHO).
@@ -44,5 +44,5 @@ Because SignSpeak relies on browser-native APIs and client-side ML, you don't ne
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/yourusername/signspeak.git](https://github.com/yourusername/signspeak.git)
-   cd signspeak
+   git clone https://github.com/Akhil3719/sign-speak.git
+cd sign-speak
